@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drones Dashboard</title>
+  <style>
+    :root { --bg:#0f172a; --panel:#111827; --muted:#6b7280; --text:#e5e7eb; --accent:#22c55e; --accent2:#60a5fa; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial; background: var(--bg); color: var(--text); }
+    header { padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1f2937; position: sticky; top: 0; background: rgba(15,23,42,0.8); backdrop-filter: blur(6px); }
+    header h1 { margin: 0; font-size: 18px; letter-spacing: 0.3px; }
+    header nav a { color: var(--muted); text-decoration: none; margin-left: 16px; font-size: 14px; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; }
+    .card { background: var(--panel); border: 1px solid #1f2937; border-radius: 12px; padding: 16px; }
+    .card h2 { margin: 0 0 12px; font-size: 16px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { font-size: 12px; color: var(--muted); }
+    input, select, textarea { width: 100%; padding: 10px 12px; background: #0b1220; border: 1px solid #1f2937; border-radius: 8px; color: var(--text); }
+    button { padding: 10px 14px; border: 0; border-radius: 8px; background: var(--accent); color: #052e14; font-weight: 600; cursor: pointer; }
+    button.secondary { background: var(--accent2); color: #041626; }
+    .list { display: grid; gap: 8px; max-height: 420px; overflow: auto; }
+    .item { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 10px; border: 1px solid #1f2937; border-radius: 8px; background: #0b1220; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid #1f2937; background: #0f1b33; color: #93c5fd; }
+    .status { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid #1f2937; }
+    .status.idle { background: #102313; color: #86efac; border-color: #14532d; }
+    .status.loading { background: #332007; color: #fbbf24; border-color: #92400e; }
+    .status.loaded { background: #0f1b33; color: #93c5fd; border-color: #1e3a8a; }
+    .footer { text-align: center; color: var(--muted); font-size: 12px; padding: 12px; }
+    .stack { display: grid; gap: 8px; }
+    .actions { display: flex; gap: 8px; }
+    .grid-two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; background:#0b1220; border:1px solid #1f2937; border-radius:8px; padding:8px; }
+  </style>
+  <script>
+    const api = (path, opts={}) => fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts }).then(r => r.json());
+
+    async function loadAvailable() {
+      const list = document.getElementById('available-list');
+      list.innerHTML = '<div class="muted">Loading...</div>';
+      try {
+        const drones = await api('/api/drones/available');
+        list.innerHTML = '';
+        drones.forEach(d => list.appendChild(renderDroneItem(d)));
+      } catch (e) {
+        list.innerHTML = '<div class="muted">Failed to load drones</div>';
+      }
+    }
+
+    function renderDroneItem(d) {
+      const el = document.createElement('div');
+      el.className = 'item';
+      const statusClass = `status ${String(d.state||'').toLowerCase()}`;
+      el.innerHTML = `
+        <div>
+          <div><strong>${d.serialNumber}</strong> <span class="pill">${d.model}</span></div>
+          <div class="muted">Battery: ${d.batteryPercentage}% • Weight limit: ${d.weightLimitGrams}g</div>
+        </div>
+        <div class="actions">
+          <span class="${statusClass}">${d.state}</span>
+          <button class="secondary" onclick="viewMed('${d.serialNumber}')">Medications</button>
+        </div>
+      `;
+      return el;
+    }
+
+    async function viewMed(serial) {
+      const out = document.getElementById('med-output');
+      out.textContent = 'Loading...';
+      try {
+        const meds = await api(`/api/drones/${encodeURIComponent(serial)}/medications`);
+        out.textContent = JSON.stringify(meds, null, 2);
+      } catch (e) {
+        out.textContent = 'Failed to fetch medications';
+      }
+    }
+
+    async function registerDrone(ev) {
+      ev.preventDefault();
+      const form = ev.currentTarget;
+      const body = {
+        serialNumber: form.serialNumber.value,
+        model: form.model.value,
+        weightLimitGrams: parseInt(form.weightLimitGrams.value, 10),
+        batteryPercentage: parseInt(form.batteryPercentage.value, 10),
+        state: 'IDLE'
+      };
+      const res = await fetch('/api/drones', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (res.ok) {
+        form.reset();
+        await loadAvailable();
+        alert('Drone registered');
+      } else {
+        const txt = await res.text();
+        alert('Failed: ' + txt);
+      }
+    }
+
+    async function loadDrone(ev) {
+      ev.preventDefault();
+      const form = ev.currentTarget;
+      const serial = form.loadSerial.value;
+      const codes = form.codes.value.split(',').map(s => s.trim()).filter(Boolean);
+      const res = await fetch(`/api/drones/${encodeURIComponent(serial)}/load`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(codes) });
+      if (res.ok) {
+        await loadAvailable();
+        const drone = await res.json();
+        document.getElementById('med-output').textContent = JSON.stringify(drone.medications || [], null, 2);
+        alert('Loaded successfully');
+      } else {
+        const txt = await res.text();
+        alert('Failed: ' + txt);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadAvailable);
+  </script>
+  </head>
+  <body>
+    <header>
+      <h1>Drone Dispatch Dashboard</h1>
+      <nav>
+        <a href="#available">Available</a>
+        <a href="#register">Register</a>
+        <a href="#load">Load</a>
+        <a href="/h2-console" target="_blank">H2 Console</a>
+      </nav>
+    </header>
+
+    <div class="container">
+      <section id="available" class="card">
+        <h2>Available Drones</h2>
+        <div id="available-list" class="list"></div>
+      </section>
+
+      <section class="stack">
+        <div id="register" class="card">
+          <h2>Register Drone</h2>
+          <form onsubmit="registerDrone(event)" class="stack">
+            <div class="row">
+              <div>
+                <label>Serial Number</label>
+                <input name="serialNumber" placeholder="DRN-2001" required maxlength="100" />
+              </div>
+              <div>
+                <label>Model</label>
+                <select name="model" required>
+                  <option>LIGHTWEIGHT</option>
+                  <option>MIDDLEWEIGHT</option>
+                  <option>CRUISERWEIGHT</option>
+                  <option>HEAVYWEIGHT</option>
+                </select>
+              </div>
+            </div>
+            <div class="row">
+              <div>
+                <label>Weight Limit (g, max 500)</label>
+                <input name="weightLimitGrams" type="number" min="1" max="500" value="500" required />
+              </div>
+              <div>
+                <label>Battery (%)</label>
+                <input name="batteryPercentage" type="number" min="0" max="100" value="80" required />
+              </div>
+            </div>
+            <div>
+              <button type="submit">Register</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="load" class="card">
+          <h2>Load Drone</h2>
+          <form onsubmit="loadDrone(event)" class="stack">
+            <div class="grid-two">
+              <div>
+                <label>Drone Serial</label>
+                <input name="loadSerial" placeholder="DRN-1001" required />
+              </div>
+              <div>
+                <label>Medication Codes (comma-separated)</label>
+                <input name="codes" placeholder="MED_1, MED_2" />
+              </div>
+            </div>
+            <div>
+              <button type="submit" class="secondary">Load</button>
+            </div>
+          </form>
+          <div class="stack">
+            <label>Loaded Medications (last viewed)</label>
+            <pre id="med-output" class="code">[]</pre>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">Drones API UI • <a href="/" style="color:#93c5fd;text-decoration:none;">Home</a> • <a href="/info" style="color:#93c5fd;text-decoration:none;">Info</a></div>
+  </body>
+  </html>
+
+

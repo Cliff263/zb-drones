@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HomeController {
 
-    @GetMapping(value = "/", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String home() {
+    @GetMapping(value = "/info", produces = MediaType.TEXT_PLAIN_VALUE)
+    public String info() {
         return """
                 Drones API is running.
                 Endpoints:

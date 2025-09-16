@@ -159,16 +159,6 @@ UPDATE DRONE SET BATTERYPERCENTAGE = 55 WHERE SERIALNUMBER = 'DRN-1001';
 DELETE FROM DRONE_MEDICATIONS WHERE DRONE_ID = 1 AND MEDICATION_ID = 9;
 ```
 
-Notes:
-
-- Table and column names are unquoted; H2 uppercases them by default: `DRONE`, `MEDICATION`, `BATTERYAUDIT`, `DRONE_MEDICATIONS`.
-- Enum fields `STATE` and `MODEL` store strings like `IDLE`, `MIDDLEWEIGHT`, etc.
-
-### What gets preloaded
-
-- 10 drones with serials `DRN-1001` ... `DRN-1010` in `IDLE` state, battery 40/60/80%.
-- 8 medications with codes `MED_1` ... `MED_8`.
-
 ### API Endpoints
 
 Base URL: `http://localhost:8080`
