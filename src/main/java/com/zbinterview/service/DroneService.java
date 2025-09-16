@@ -1,14 +1,20 @@
 package com.zbinterview.service;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.stereotype.Service;
+
 import com.zbinterview.entity.Drone;
 import com.zbinterview.entity.Medication;
 import com.zbinterview.model.DroneState;
 import com.zbinterview.repository.DroneRepository;
 import com.zbinterview.repository.MedicationRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.stereotype.Service;
 
-import java.util.*;
+import jakarta.transaction.Transactional;
 
 @Service
 public class DroneService {
@@ -27,6 +33,9 @@ public class DroneService {
         if (drone.getBatteryPercentage() < 0 || drone.getBatteryPercentage() > 100) {
             throw new IllegalArgumentException("Battery percentage must be between 0 and 100");
         }
+        if (drone.getState() == com.zbinterview.model.DroneState.LOADING && drone.getBatteryPercentage() < 25) {
+            throw new IllegalArgumentException("Cannot set LOADING state when battery is below 25%");
+        }
         if (drone.getState() == null) {
             drone.setState(DroneState.IDLE);
         }
@@ -38,7 +47,10 @@ public class DroneService {
     }
 
     public List<Drone> findAvailableForLoading() {
-        return droneRepository.findByState(DroneState.IDLE);
+        return droneRepository.findByState(DroneState.IDLE)
+                .stream()
+                .filter(d -> d.getBatteryPercentage() >= 25)
+                .toList();
     }
 
     public int getBatteryLevel(String serial) {

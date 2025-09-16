@@ -10,7 +10,7 @@ Spring Boot 3 (Java 17) REST API for managing a fleet of drones and medication l
 
 ### Quick Start (Windows PowerShell)
 
-- From the project root `C:\Users\Sir_Cliff\Desktop\drones`:
+- From the project root `C:\Users\Sir_Cliff\Desktop\zb-drones`:
 
 ```powershell
 # Option A: If mvn is not on PATH, use full path
@@ -26,6 +26,52 @@ mvn clean spring-boot:run
   - JDBC URL: `jdbc:h2:mem:dronesdb`
   - Username: `sa`
   - Password: (leave empty)
+
+### Register and Load (quick commands)
+
+PowerShell (recommended on Windows):
+
+```powershell
+# Register a new drone
+$registerBody = @{
+  serialNumber = 'DRN-2001'
+  model = 'MIDDLEWEIGHT'
+  weightLimitGrams = 500
+  batteryPercentage = 90
+  state = 'IDLE'
+} | ConvertTo-Json
+Invoke-RestMethod -Method POST http://localhost:8080/api/drones -ContentType 'application/json' -Body $registerBody | ConvertTo-Json -Depth 5
+
+# Load medications by code onto that drone
+$loadBody = '["MED_1","MED_2"]'
+Invoke-RestMethod -Method POST http://localhost:8080/api/drones/DRN-2001/load -ContentType 'application/json' -Body $loadBody | ConvertTo-Json -Depth 5
+
+# Verify loaded medications
+Invoke-RestMethod -Method GET http://localhost:8080/api/drones/DRN-2001/medications | ConvertTo-Json -Depth 5
+```
+
+curl:
+
+```bash
+# Register a new drone
+curl -X POST http://localhost:8080/api/drones \
+  -H "Content-Type: application/json" \
+  -d '{
+    "serialNumber": "DRN-2001",
+    "model": "MIDDLEWEIGHT",
+    "weightLimitGrams": 500,
+    "batteryPercentage": 90,
+    "state": "IDLE"
+  }'
+
+# Load medications by code onto that drone
+curl -X POST http://localhost:8080/api/drones/DRN-2001/load \
+  -H "Content-Type: application/json" \
+  -d '["MED_1","MED_2"]'
+
+# Verify loaded medications
+curl http://localhost:8080/api/drones/DRN-2001/medications
+```
 
 ### H2 Console: example SQL
 
