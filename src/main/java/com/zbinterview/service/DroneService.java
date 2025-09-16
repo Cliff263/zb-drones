@@ -86,7 +86,10 @@ public class DroneService {
 
         drone.setMedications(meds);
         drone.setState(meds.isEmpty() ? DroneState.IDLE : DroneState.LOADED);
-        return droneRepository.save(drone);
+        droneRepository.save(drone);
+        // Return fully-populated drone with medications loaded
+        return droneRepository.findWithMedicationsBySerialNumber(serial)
+                .orElse(drone);
     }
 
     public Set<Medication> checkLoadedMedications(String serial) {

@@ -32,7 +32,7 @@ mvn clean spring-boot:run
 PowerShell (recommended on Windows):
 
 ```powershell
-# Register a new drone
+# Register a new drone{you can differentiate serial numbers as needed}
 $registerBody = @{
   serialNumber = 'DRN-2001'
   model = 'MIDDLEWEIGHT'
