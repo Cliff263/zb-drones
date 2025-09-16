@@ -48,6 +48,40 @@
       }
     }
 
+    async function loadMedicationsList() {
+      const container = document.getElementById('medications-list');
+      container.innerHTML = '<div class="muted">Loading...</div>';
+      try {
+        const meds = await api('/api/medications');
+        container.innerHTML = '';
+        meds.forEach(m => container.appendChild(renderMedItem(m)));
+      } catch (e) {
+        container.innerHTML = '<div class="muted">Failed to load medications</div>';
+      }
+    }
+
+    function renderMedItem(m) {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = `
+        <div>
+          <div><strong>${m.code}</strong> <span class="pill">${m.weightGrams}g</span></div>
+          <div class="muted">${m.name}</div>
+        </div>
+        <div class="actions">
+          <button class="secondary" onclick="addCode('${m.code}')">Add</button>
+        </div>
+      `;
+      return el;
+    }
+
+    function addCode(code) {
+      const input = document.querySelector('input[name="codes"]');
+      const current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (!current.includes(code)) current.push(code);
+      input.value = current.join(', ');
+    }
+
     function renderDroneItem(d) {
       const el = document.createElement('div');
       el.className = 'item';
@@ -114,7 +148,7 @@
       }
     }
 
-    window.addEventListener('DOMContentLoaded', loadAvailable);
+    window.addEventListener('DOMContentLoaded', () => { loadAvailable(); loadMedicationsList(); });
   </script>
   </head>
   <body>
@@ -190,6 +224,10 @@
             <label>Loaded Medications (last viewed)</label>
             <pre id="med-output" class="code">[]</pre>
           </div>
+        </div>
+        <div class="card">
+          <h2>Medications</h2>
+          <div id="medications-list" class="list"></div>
         </div>
       </section>
     </div>

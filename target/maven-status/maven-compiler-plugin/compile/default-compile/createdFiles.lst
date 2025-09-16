@@ -5,6 +5,7 @@ com\zbinterview\model\DroneModel.class
 com\zbinterview\bootstrap\DataLoader.class
 com\zbinterview\controller\DroneController.class
 com\zbinterview\entity\Medication.class
+com\zbinterview\controller\MedicationController.class
 com\zbinterview\controller\HomeController.class
 com\zbinterview\DronesApplication.class
 com\zbinterview\entity\BatteryAudit.class
