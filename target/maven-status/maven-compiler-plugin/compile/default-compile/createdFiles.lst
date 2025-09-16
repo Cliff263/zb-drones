@@ -1,0 +1,15 @@
+com\zbinterview\service\DroneService.class
+com\zbinterview\scheduler\BatteryAuditScheduler.class
+com\zbinterview\repository\DroneRepository.class
+com\zbinterview\model\DroneModel.class
+com\zbinterview\bootstrap\DataLoader.class
+com\zbinterview\controller\DroneController.class
+com\zbinterview\entity\Medication.class
+com\zbinterview\controller\HomeController.class
+com\zbinterview\DronesApplication.class
+com\zbinterview\entity\BatteryAudit.class
+com\zbinterview\repository\MedicationRepository.class
+com\zbinterview\config\SchedulerConfig.class
+com\zbinterview\model\DroneState.class
+com\zbinterview\repository\BatteryAuditRepository.class
+com\zbinterview\entity\Drone.class
